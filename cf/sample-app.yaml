@@ -224,23 +224,8 @@ Resources:
       SubnetId: !Ref PriSubnetAz3
       RouteTableId: !Ref RouteViaNG
 
-  ContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId: !Ref Vpc
-      GroupDescription: Container Security Group
-      SecurityGroupIngress:
-      - CidrIp: 0.0.0.0/0
-        FromPort: 0
-        IpProtocol: tcp
-        ToPort: 65535
-      Tags:
-        - Key: Name
-          Value: !Join [ "", [ !Ref StackName, "-container-sg" ]]
-
   AppALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
-    DependsOn: ContainerSecurityGroup
     Properties:
       GroupDescription: APP ALB Allowed Ports
       VpcId: !Ref Vpc
@@ -253,6 +238,21 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join [ "", [ !Ref StackName, "-app-alb-sg" ]]
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: AppALBSecurityGroup
+    Properties:
+      VpcId: !Ref Vpc
+      GroupDescription: Container Security Group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 9292
+          ToPort: 9292
+          SourceSecurityGroupId: !Ref AppALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-container-sg" ]]
 
   AppALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup

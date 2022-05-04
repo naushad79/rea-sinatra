@@ -1,14 +1,20 @@
 # rea-sinatra
 REA Sinatra Challenge
 
-Docker Image Build
-Prerequisite
+#Docker Image Build
+
+##Prerequisite
+
 Run docker in locally or any server that can be used to build and push the image to the AWS
 ECR repo
-Create ECR Repo
+
+#Create ECR Repo
+
 Login to AWS account and create a ECR Repo
 example : sample-app
-Build the image and push to repo
+
+#Build the image and push to repo
+
 Goto the docker directory provided and run the following commands to build and push the
 image to the AWS ECR repo
 Note: Make sure to configure AWS CLI and have access to the aws account and region is set to

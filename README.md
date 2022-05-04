@@ -19,11 +19,10 @@ Goto the **docker** directory provided and run the following commands to build a
 
 **Note:** Make sure to configure AWS CLI and have access to the aws account and region is set to **ap-southeast-2**
 
-`aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin <replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com`
-
-`# docker build -t sample-app .`
-`# docker tag sample-app:latest<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest`
-`# docker push <replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest`
+`aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin <replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com` <br/>
+`# docker build -t sample-app .` <br/>
+`# docker tag sample-app:latest<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest` <br/>
+`# docker push <replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest` <br/>
 
 # Create AWS Infrastructure and Deploying the App
 ## Creating a task execution role
@@ -53,7 +52,7 @@ Run the following command to deploy it
 
 # Accessing the App
 
-● From AWS console, goto cloudformation
-● Select the sample-app stack
-● Goto output tab
-● Click on the url to access the app
+- From AWS console, goto cloudformation
+- Select the sample-app stack
+- Goto output tab
+- Click on the url to access the app

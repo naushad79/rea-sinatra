@@ -1,0 +1,374 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'Sample App'
+
+Parameters:
+  StackName:
+    Type: String
+    Description: 'ECS cluster name for the app '
+    Default: 'sample-app'
+
+  VpcCidr:
+    Type: String
+    Description: Optional - Specifies the CIDR Block of VPC
+    Default: '10.1.0.0/16'
+
+  PublicA:
+    Type: String
+    Description: Specifies the CIDR Block of Public Subnet 1
+    Default: '10.1.100.0/24'
+
+  PublicB:
+    Type: String
+    Description: Specifies the CIDR Block of Public Subnet 2
+    Default: '10.1.200.0/24'
+
+  PublicC:
+    Type: String
+    Description: Specifies the CIDR Block of Public Subnet 2
+    Default: '10.1.90.0/24'
+
+  PrivateA:
+    Type: String
+    Description: Specifies the CIDR Block of Private Subnet 3
+    Default: '10.1.101.0/24'
+
+  PrivateB:
+    Type: String
+    Description: Specifies the CIDR Block of Private Subnet 4
+    Default: '10.1.201.0/24'
+
+  PrivateC:
+    Type: String
+    Description: Specifies the CIDR Block of Private Subnet 4
+    Default: '10.1.91.0/24'
+
+  ImageName:
+    Type: String
+    Description: 'Container Image Name'
+    Default: ''
+
+Resources:
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: !Join [ "-", [ !Ref StackName, "vpc" ]]
+
+  PubSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PublicA
+      AvailabilityZone: !Select [ 0, Fn::GetAZs: !Ref 'AWS::Region' ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-public-a" ]]
+
+  PubSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PublicB
+      AvailabilityZone: !Select [ 1, Fn::GetAZs: !Ref 'AWS::Region' ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-public-b" ]]
+
+  PubSubnetAz3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PublicC
+      AvailabilityZone: !Select [ 2, Fn::GetAZs: !Ref 'AWS::Region' ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-public-c" ]]
+
+  PriSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PrivateA
+      AvailabilityZone: !Select [ 0, Fn::GetAZs: !Ref 'AWS::Region' ]
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-private-a" ]]
+
+  PriSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PrivateB
+      AvailabilityZone: !Select [ 1, Fn::GetAZs: !Ref 'AWS::Region' ]
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-private-b" ]]
+
+  PriSubnetAz3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref PrivateC
+      AvailabilityZone: !Select [ 0, Fn::GetAZs: !Ref 'AWS::Region' ]
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-private-c" ]]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-igw" ]]
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteViaIgw:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-public-rt" ]]
+
+  PublicRouteViaIgw:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteViaIgw
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PubSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnetAz1
+      RouteTableId: !Ref RouteViaIgw
+
+  PubSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnetAz2
+      RouteTableId: !Ref RouteViaIgw
+
+  PubSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnetAz3
+      RouteTableId: !Ref RouteViaIgw
+
+  NGEIP:
+     Type: AWS::EC2::EIP
+     Properties:
+        Domain: vpc
+        Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-natgateway-eip" ]]
+
+  NGForPrivateSN:
+   Type: AWS::EC2::NatGateway
+   Properties:
+      AllocationId:
+         Fn::GetAtt:
+         - NGEIP
+         - AllocationId
+      SubnetId: !Ref PubSubnetAz1
+      Tags:
+      - Key: Name
+        Value: !Join [ "", [ !Ref StackName, "-nat-a" ]]
+
+  RouteViaNG:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-private-rt" ]]
+
+  PrivateRouteViaNG:
+    Type: AWS::EC2::Route
+    DependsOn: NGForPrivateSN
+    Properties:
+      RouteTableId: !Ref RouteViaNG
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NGForPrivateSN
+
+  PriSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PriSubnetAz1
+      RouteTableId: !Ref RouteViaNG
+
+  PriSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PriSubnetAz2
+      RouteTableId: !Ref RouteViaNG
+
+  PriSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PriSubnetAz3
+      RouteTableId: !Ref RouteViaNG
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref Vpc
+      GroupDescription: Container Security Group
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 0
+        IpProtocol: tcp
+        ToPort: 65535
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-container-sg" ]]
+
+  AppALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: ContainerSecurityGroup
+    Properties:
+      GroupDescription: APP ALB Allowed Ports
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-app-alb-sg" ]]
+
+  AppALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 9292
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+         HttpCode: 200
+      Name: !Join [ "", [ !Ref StackName, "-tg" ]]
+      Port: 9292
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: !Join [ "", [ !Ref StackName, "-tg" ]]
+      TargetType: ip
+      UnhealthyThresholdCount: 8
+      VpcId: !Ref Vpc
+
+  AppALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name:  !Join [ "", [ !Ref StackName, "-ApplicationLB" ]]
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref AppALBSecurityGroup
+      Subnets:
+      - !Ref PubSubnetAz1
+      - !Ref PubSubnetAz2
+      - !Ref PubSubnetAz3
+
+      LoadBalancerAttributes:
+      - Key: routing.http2.enabled
+        Value: "true"
+      - Key: access_logs.s3.enabled
+        Value: "false"
+      - Key: deletion_protection.enabled
+        Value: "false"
+
+  AppALBListener80:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AppALBTargetGroup
+
+      LoadBalancerArn: !Ref AppALB
+      Port: 80
+      Protocol: HTTP
+
+  ECSCluster:
+      Type: AWS::ECS::Cluster
+      Properties:
+        ClusterName: !Join [ "", [ !Ref StackName, "-ecs-cluster" ]]
+        Tags:
+          - Key: Name
+            Value: !Join [ "", [ !Ref StackName, "-ecs-cluster" ]]
+
+  AppTaskDef:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        RequiresCompatibilities:
+          - "FARGATE"
+        ExecutionRoleArn: "arn:aws:iam::172995405107:role/ecsTaskExecutionRole"
+        TaskRoleArn: "arn:aws:iam::172995405107:role/ecsTaskExecutionRole"
+        Cpu: 256
+        Memory: 512
+        NetworkMode: "awsvpc"
+        Family: !Ref StackName
+        ContainerDefinitions:
+          - Name:  !Ref StackName
+            Image: !Ref ImageName
+            MemoryReservation: 256
+            Memory: 512
+            Essential: true
+            PortMappings:
+              - ContainerPort: 9292
+                Protocol: tcp
+
+  AppECSService: 
+    Type: AWS::ECS::Service
+    DependsOn: [AppALB, AppALBTargetGroup, ContainerSecurityGroup, AppALBListener80 ]
+    Properties: 
+      Cluster:  !Ref ECSCluster
+      DesiredCount: 1
+      TaskDefinition: !Ref AppTaskDef
+      LaunchType: FARGATE
+      EnableExecuteCommand: true
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      HealthCheckGracePeriodSeconds: 300
+      NetworkConfiguration:
+        AwsvpcConfiguration: 
+          Subnets: 
+            - !Ref PriSubnetAz1
+            - !Ref PriSubnetAz2
+            - !Ref PriSubnetAz3
+          
+          SecurityGroups: 
+            - !Ref ContainerSecurityGroup
+
+          AssignPublicIp: DISABLED 
+
+      LoadBalancers:
+        - TargetGroupArn: !Ref AppALBTargetGroup
+          ContainerPort: 9292
+          ContainerName: !Ref StackName
+
+Outputs:
+  ALBDNSName:
+    Description: ALB DNS Name
+    Value: !GetAtt AppALB.DNSName
+
+

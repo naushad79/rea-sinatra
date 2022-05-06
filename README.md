@@ -49,7 +49,7 @@ Run the following command to deploy it
 **Note:** Make sure to configure AWS CLI and have access to the aws account and region is set to *ap-southeast-2*
 
 If you set decide to creat the task role via CF set the **CreateRole** to **TRUE**, if you have done it manually set it to **FALSE**
-`# aws cloudformation create-stack --stack-name sample-app --template-body file://sample-app.yaml --parameters ParameterKey=ImageName,ParameterValue=<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest ParameterKey=CreateRole,ParameterValue='TRUE' --capabilities CAPABILITY_IAM`
+`# aws cloudformation create-stack --stack-name sample-app --template-body file://sample-app.yaml --parameters ParameterKey=ImageName,ParameterValue=<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest ParameterKey=CreateRole,ParameterValue='TRUE' --capabilities CAPABILITY_NAMED_IAM`
 
 # Accessing the App
 

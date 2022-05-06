@@ -332,6 +332,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: CreateTaskExecutionRole
     Properties:
+      RoleName: 'ecsTaskExecutionRole'
       AssumeRolePolicyDocument:
         Version: 2008-10-17
         Statement:
@@ -350,8 +351,8 @@ Resources:
       Properties: 
         RequiresCompatibilities:
           - "FARGATE"
-        ExecutionRoleArn: !Ref TaskexecutionRole
-        TaskRoleArn: !Ref TaskexecutionRole
+        ExecutionRoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole'
+        TaskRoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole'
         Cpu: 256
         Memory: 512
         NetworkMode: "awsvpc"

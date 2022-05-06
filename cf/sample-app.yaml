@@ -48,6 +48,19 @@ Parameters:
     Description: 'Container Image Name'
     Default: ''
 
+  CreateRole:
+    Type: String
+    Description: 'Container Image Name'
+    Default: 'FALSE'
+    AllowedValues:
+      - 'TRUE'
+      - 'FALSE'
+
+Conditions:
+  CreateTaskExecutionRole: !Equals 
+    - !Ref CreateRole
+    - 'TRUE'
+
 Resources:
 
   Vpc:
@@ -315,13 +328,30 @@ Resources:
           - Key: Name
             Value: !Join [ "", [ !Ref StackName, "-ecs-cluster" ]]
 
+  TaskexecutionRole:
+    Type: AWS::IAM::Role
+    Condition: CreateTaskExecutionRole
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2008-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+               - ecs.amazonaws.com
+               - ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
   AppTaskDef:
       Type: AWS::ECS::TaskDefinition
-      Properties:
+      DependsOn: [TaskexecutionRole]
+      Properties: 
         RequiresCompatibilities:
           - "FARGATE"
-        ExecutionRoleArn: "arn:aws:iam::172995405107:role/ecsTaskExecutionRole"
-        TaskRoleArn: "arn:aws:iam::172995405107:role/ecsTaskExecutionRole"
+        ExecutionRoleArn: !Ref TaskexecutionRole
+        TaskRoleArn: !Ref TaskexecutionRole
         Cpu: 256
         Memory: 512
         NetworkMode: "awsvpc"

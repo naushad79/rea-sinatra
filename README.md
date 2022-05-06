@@ -27,7 +27,7 @@ Goto the **docker** directory provided and run the following commands to build a
 # Create AWS Infrastructure and Deploying the App
 ## Creating a task execution role
 
-This can be automated. However, in this instance it’s an Click ops
+You could craete this role manually and set the **CreateRole** prameter value to **FALSE** or just skip this setep and run it with setting the parameter value to **TRUE**
 
 1. Goto IAM from AWS Console
 2. In the navigation pane, choose Roles, Create role.
@@ -48,7 +48,8 @@ Goto cf directory
 Run the following command to deploy it
 **Note:** Make sure to configure AWS CLI and have access to the aws account and region is set to *ap-southeast-2*
 
-`# aws cloudformation create-stack --stack-name sample-app --template-body file://sample-app.yaml --parameters ParameterKey=ImageName,ParameterValue=<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest`
+If you set decide to creat the task role via CF set the **CreateRole** to **TRUE**, if you have done it manually set it to **FALSE**
+`# aws cloudformation create-stack --stack-name sample-app --template-body file://sample-app.yaml --parameters ParameterKey=ImageName,ParameterValue=<replace_aws_account_id>.dkr.ecr.ap-southeast-2.amazonaws.com/sample-app:latest ParameterKey=CreateRole,ParameterValue='TRUE' --capabilities CAPABILITY_IAM`
 
 # Accessing the App
 
